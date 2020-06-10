@@ -15,7 +15,8 @@ namespace Coursework
         PlayerDisconnect,
         Send,
         Wait,
-        GameOver
+        GameOver,
+        ServerClose
     }
 
     [Serializable]

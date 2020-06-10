@@ -27,6 +27,8 @@ namespace Coursework
         Thread Receiver;
         UdpClient receiver;
 
+        public bool InReceive { get => DoLoop; }
+
         private bool DoLoop = true;
 
         public AClient(string adress, int port)
@@ -36,9 +38,9 @@ namespace Coursework
             localIPAdress = IPAddress.Parse(LocalIPAddress());
         }
 
-        public void StartReceive()
+        public void StartReceive(string name)
         {
-            Receiver = new Thread(ReceiveFrame) { Name = "ClientReceiver", IsBackground = true };
+            Receiver = new Thread(ReceiveFrame) { Name = name, IsBackground = true };
             Receiver.Start();
         }
 
@@ -67,12 +69,13 @@ namespace Coursework
                 while (DoLoop == true)
                 {
                     // получаем данные
-                    byte[] data = receiver.Receive(ref remoteIp); 
+                    byte[] data = receiver.Receive(ref remoteIp);
                     // если будешь тестить программу на одном пк - закомментированное ниже - не трожь, иначе сообщения не будут отлавливаться
                     /*if (remoteIp.Address.ToString().Equals(localAddress))
                         continue;*/
                     // вызываем событие о получении сообщения
-                    Receive?.Invoke((AFrame)ByteArrayToObject(data));
+                    AFrame frame = (AFrame)ByteArrayToObject(data);
+                    Receive?.Invoke(frame);
                 }
             }
             // получаем сообщение об ошибке
