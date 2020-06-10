@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Drawing;
+using System.Reflection;
 
 namespace Coursework
 {
@@ -190,12 +191,53 @@ namespace Coursework
 
         }
 
+        private void InitGameOverForm(ARoom room) 
+        {
+            Text = "Local Client. " + room.Name + " - GAME OVER";
+            ClientSize = new Size(800, 600);
+            Controls.Clear();
+            int k = 0;
+            AList<Label> PlayersList = new AList<Label>();
+            Label title = new Label { Text = "РЕЗУЛЬТАТЫ АНАЛИЗОВ" , Location = new Point(10,10), Width = 780, Font = new Font(Font.FontFamily, 14)};
+            foreach (APlayer player in room.Players.OrderByDescending(u => u.Score).ToList()) 
+            {
+                k++;
+                PlayersList.Add(new Label { Text = player.Name + ": " + player.Score, Location = new Point(10, k * 40), Width = 780 });
+            }
+        }
+
         private void InitGameRoomForm(ARoom room)
         {
             Controls.Clear();
 
             Text = "Local Client. " + room.Name;
             ClientSize = new Size(800, 600);
+            GameView gameView = new GameView(room) { Parent = this, Location = new Point(10,10), Height = 400};
+            
+            gameView.ClickRoll += () => 
+            {
+                Server.StartSending(new AFrame(room.Id, room, AMessageType.Send), true, "ClientSender");
+
+                Client.Receive += (frame) => {
+                    if (InvokeRequired) Invoke(new Action<AFrame>((s) =>
+                    {
+                        switch (frame.MessageType)
+                        {
+                            case AMessageType.Send:
+                                gameView.Update((ARoom)frame.Data);     
+                                break;
+                            case AMessageType.PlayerDisconnect:
+                                gameView.Update((ARoom)frame.Data);
+                                break;
+                            case AMessageType.GameOver:
+                                InitGameOverForm((ARoom)frame.Data);
+                                break;
+                        }
+                    }
+                ), frame);
+                };
+            };
+
 
         }
 
