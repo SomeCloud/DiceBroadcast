@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Drawing;
+using System.Threading;
 
 namespace Coursework
 {
@@ -29,7 +30,9 @@ namespace Coursework
 
             Server = new AServer(adress, sendport); // 8001
             Client = new AClient(adress, receiveport); // 8000
-            LobbyServer = new AServer(adress, lobbyport);
+            //LobbyServer = new AServer(adress, lobbyport);
+
+            Thread LobbyThread;
 
             Rooms = new AList<ARoom>();
 
@@ -38,11 +41,20 @@ namespace Coursework
 
 
             RoomListChangeEvent += () => {
+                LobbyThread = new Thread(new ParameterizedThreadStart((object obj) => {
+                    AServer LobbyServer = new AServer(adress, lobbyport);
+                    while (/*RoomsList.Count > 0*/true)
+                    {
+                        LobbyServer.StartSending(new AFrame(0, Rooms.Clone(), AMessageType.Undefined), true, "LobbyServer"); Thread.Sleep(500);
+                    }
+                }))
+                { Name = "LobbyThread", IsBackground = true };
+                LobbyThread.Start();
                 /*if (LobbyServer.InSend == true)
                 {
                     LobbyServer.StopSending();
                 }*/
-                LobbyServer.StartSending(new AFrame(0, Rooms.Clone(), AMessageType.Undefined), true, "LobbySender");
+                //LobbyServer.StartSending(new AFrame(0, Rooms.Clone(), AMessageType.Undefined), true, "LobbySender");
             };
 
             Client.StartReceive("ServerReceiver");

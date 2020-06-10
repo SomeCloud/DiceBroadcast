@@ -71,7 +71,7 @@ namespace Coursework
         {
             // создаем UdpClient для отправки
             sender = new UdpClient();
-            sender.Client.SendTimeout = 50;
+            //sender.Client.SendTimeout = 50;
             IPEndPoint endPoint = new IPEndPoint(GroupIPAdress, remotePort);
             try
             {
