@@ -29,6 +29,8 @@ namespace Coursework
             Client.StartReceive("ClientReceiver");
             LobbyClient.StartReceive("LobbyReceiver");
 
+            var e = 0;
+
             InitLobby();
 
         }
