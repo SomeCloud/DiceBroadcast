@@ -29,8 +29,6 @@ namespace Coursework
             Client.StartReceive("ClientReceiver");
             LobbyClient.StartReceive("LobbyReceiver");
 
-            var e = 0;
-
             InitLobby();
 
         }
@@ -91,11 +89,11 @@ namespace Coursework
 
         }
 
-        private void InitInputYourNameForm(ARoom room)
+        private void InitInputYourNameForm(ARoom Room)
         {
             Controls.Clear();
 
-            Text = "Local Client. Connect to " + room.Name;
+            Text = "Local Client. Connect to " + Room.Name;
             ClientSize = new Size(800, 600);
 
             Label RoomTitle = new Label() { Parent = this, Location = new Point(ClientSize.Width / 2 - 250, ClientSize.Height / 2 - 195), Size = new Size(500, 40), Font = new Font(Font.FontFamily, 24), Text = "Настройки создания комнаты" };
@@ -108,7 +106,7 @@ namespace Coursework
             
 
             Done.Click += (object sender, EventArgs e) => {
-                CRoom room = new CRoom(0, RoomNameInput.Text, PlayerNameInput.Text, PlayersCountInput.Value);
+                CRoom room = new CRoom(0, Room.Name, PlayerNameInput.Text, Room.MaxPlayers);
                 Server.StartSending(new AFrame(room.Id, room, AMessageType.Connect), true, "ClientSender");
                 Client.Receive += (frame) => {
                     if (InvokeRequired) Invoke(new Action<AFrame>((s) =>
@@ -119,6 +117,7 @@ namespace Coursework
                                 InitWaitingRoomForm((ARoom)frame.Data, PlayerNameInput.Text);
                                 break;
                             case AMessageType.Send:
+                                InitGameRoomForm((ARoom)frame.Data);
                                 break;
                             case AMessageType.PlayerDisconnect:
                                 break;
@@ -173,6 +172,7 @@ namespace Coursework
                                 InitWaitingRoomForm((ARoom)frame.Data, PlayerNameInput.Text);
                                 break;
                             case AMessageType.Send:
+                                InitGameRoomForm((ARoom)frame.Data);
                                 break;
                             case AMessageType.PlayerDisconnect:
                                 break;
@@ -187,6 +187,15 @@ namespace Coursework
             Back.Click += (object sender, EventArgs e) => {
                 InitLobby();
             };
+
+        }
+
+        private void InitGameRoomForm(ARoom room)
+        {
+            Controls.Clear();
+
+            Text = "Local Client. " + room.Name;
+            ClientSize = new Size(800, 600);
 
         }
 

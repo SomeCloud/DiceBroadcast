@@ -39,8 +39,6 @@ namespace Coursework
             //ComboBox Lobbys = new ComboBox() { Parent = this, Location = new Point(10, 10), Size = new Size(500, 30), Text = "Не выбрано" };
             RichTextBox Chrono = new RichTextBox() { Parent = this, Location = new Point(10, 10), Size = new Size(500, 580) };
 
-            var t = 0;
-
             RoomListChangeEvent += () => {
                 LobbyThread = new Thread(new ParameterizedThreadStart((object obj) => {
                     AServer LobbyServer = new AServer(adress, lobbyport);
@@ -83,8 +81,17 @@ namespace Coursework
                             croom = (CRoom)frame.Data;
                             if (FindRoomByName(croom.RoomName, out room) == true)
                             {
-                                Server.StartSending(new AFrame(room.Id, room, AMessageType.Connect), true, "ServerSender");
-                                Chrono.AppendText("[" + room.Name + "] : Игрок " + croom.PlayerName + " подключился\n");
+                                APlayer newPlayer = new APlayer(croom.PlayerName, room.Players.Count + 1);
+                                if (room.AddPlayer(newPlayer) == true)
+                                {
+                                    Server.StartSending(new AFrame(room.Id, room, AMessageType.Connect), true, "ServerSender");
+                                    Chrono.AppendText("[" + room.Name + "] : Игрок " + croom.PlayerName + " подключился\n");
+                                    if (room.GameStatus.Equals(AGameStatus.Game) == true)
+                                    {
+                                        Server.StartSending(new AFrame(room.Id, room, AMessageType.Send), true, "ServerSender");
+                                        Chrono.AppendText("[" + room.Name + "] : Игра началась\n");
+                                    }
+                                }
                             }
                             break;
                         case AMessageType.PlayerDisconnect:
