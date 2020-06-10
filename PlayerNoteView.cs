@@ -10,6 +10,9 @@ namespace Coursework
 {
     class PlayerNoteView: Panel
     {
+
+        delegate Bitmap Func(int score);
+
         APlayer player;
         private Label PlayerName;
         private Label PlayerScore;
@@ -21,28 +24,42 @@ namespace Coursework
 
         }
 
-        public PlayerNoteView(APlayer player, bool active) : base()
+        public PlayerNoteView(APlayer Player, bool active) : base()
         {
-            player = this.player;
+
+            player = Player;
             Size = new Size(760, 50);
             if (active)
                 BackColor = Color.LightGreen;
             else BackColor = Color.Transparent;
 
-            PlayerName = new Label() { Parent = this, Location = new Point(0, 10), Size = new Size(100, 30), Font = new Font(Font.FontFamily, 18), Text = player.Name.ToString() };
-            PlayerScore = new Label() { Parent = this, Location = new Point(110, 0), Size = new Size(140, 50)};
-            PlayerMoveScore = new Label() { Parent = this, Location = new Point(260, 10), Size = new Size(140, 30), Font = new Font(Font.FontFamily, 18)};
-            DicePicture = new PictureBox() { Parent = this, Location = new Point(410, 10), Size = new Size(50, 50), SizeMode = PictureBoxSizeMode.StretchImage };
-            //Connect = new Button() { Parent = this, Location = new Point(660, 0), Size = new Size(100, 50), Font = new Font(Font.FontFamily, 9), Text = "Подключиться" };
+            Func F = (score) => {
+                switch (score)
+                {
+                    case 1:
+                        return Properties.Resources._1;
+                    case 2:
+                        return Properties.Resources._2;
+                    case 3:
+                        return Properties.Resources._3;
+                    case 4:
+                        return Properties.Resources._4;
+                    case 5:
+                        return Properties.Resources._5;
+                    case 6:
+                        return Properties.Resources._6;
+                    default:
+                        return new Bitmap(50, 50);
+                }
+            };
 
-            //SetStatusColor(Source.GameStatus);
-
-            // вызываем собтие, если пользователь нажал на кнопку "Подключиться"
-            //Connect.Click += (object sender, EventArgs e) => {
-            //    ConnectEvent?.Invoke(this);
-            //};
-
-            // если статус сервера изменился - обновляем данные
+            PlayerName = new Label() { Parent = this, Location = new Point(0, 10), Size = new Size(300, 30), Font = new Font(Font.FontFamily, 14), Text = player.Name };
+            PlayerScore = new Label() { Parent = this, Location = new Point(310, 10), Size = new Size(200, 50), Font = new Font(Font.FontFamily, 14), Text = "Score: " + player.Score };
+            PlayerMoveScore = new Label() { Parent = this, Location = new Point(510, 10), Size = new Size(200, 30), Font = new Font(Font.FontFamily, 14), Text = "Last Round: " + player.LastRound.Sum() };
+            if (player.LastRound.Count > 0)
+            {
+                DicePicture = new PictureBox() { Parent = this, Location = new Point(710, 0), Size = new Size(50, 50), Image = F(player.LastRound.Last()), SizeMode = PictureBoxSizeMode.StretchImage };
+            }
             
         }
 

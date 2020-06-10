@@ -109,10 +109,12 @@ namespace Coursework
                     if (i + 1 < Players.Count)
                     {
                         ActivePlayer = Players[i + 1];
+                        break;
                     }
                     else
                     {
                         ActivePlayer = Players[0];
+                        break;
                     }
                 }
             }

@@ -20,6 +20,7 @@ namespace Coursework
 
         public AServer LobbyServer;
 
+        RichTextBox Chrono;
         AList<ARoom> Rooms;
 
         public AServerForm(string adress, int sendport, int receiveport, int lobbyport) : base()
@@ -36,24 +37,18 @@ namespace Coursework
 
             Rooms = new AList<ARoom>();
 
-            //ComboBox Lobbys = new ComboBox() { Parent = this, Location = new Point(10, 10), Size = new Size(500, 30), Text = "Не выбрано" };
-            RichTextBox Chrono = new RichTextBox() { Parent = this, Location = new Point(10, 10), Size = new Size(500, 580) };
+            Chrono = new RichTextBox() { Parent = this, Location = new Point(10, 10), Size = new Size(500, 580) };
 
             RoomListChangeEvent += () => {
                 LobbyThread = new Thread(new ParameterizedThreadStart((object obj) => {
                     AServer LobbyServer = new AServer(adress, lobbyport);
-                    while (/*RoomsList.Count > 0*/true)
+                    while (true)
                     {
                         LobbyServer.StartSending(new AFrame(0, Rooms.Clone(), AMessageType.Undefined), true, "LobbyServer"); Thread.Sleep(500);
                     }
                 }))
                 { Name = "LobbyThread", IsBackground = true };
                 LobbyThread.Start();
-                /*if (LobbyServer.InSend == true)
-                {
-                    LobbyServer.StopSending();
-                }*/
-                //LobbyServer.StartSending(new AFrame(0, Rooms.Clone(), AMessageType.Undefined), true, "LobbySender");
             };
 
             Client.StartReceive("ServerReceiver");
@@ -139,7 +134,7 @@ namespace Coursework
                                 if (Process(room) == true)
                                 {
                                     Server.StartSending(new AFrame(room.Id, room, AMessageType.Send), true, "ServerSender");
-                                    Chrono.AppendText("[" + room.Name + "] : Игрок " + croom.PlayerName + " сделал ход (" + room.ActivePlayer.LastRound.Sum() + ")\n");
+                                    Chrono.AppendText("[" + room.Name + "] : Игрок " + croom.PlayerName + " сделал ход (" + room.ActivePlayer.LastRound.Last() + ")\n");
                                 }
                                 else
                                 {
@@ -157,7 +152,7 @@ namespace Coursework
                                 room.NextPlayer();
                             }
                             Server.StartSending(new AFrame(room.Id, room, AMessageType.Send), true, "ServerSender");
-                            Chrono.AppendText("[" + room.Name + "] : Игрок " + croom.PlayerName + " завершает свой раунд " + room.ActivePlayer.Score + "\n");
+                            Chrono.AppendText("[" + room.Name + "] : Игрок " + croom.PlayerName + " завершает свой раунд со счетом:  " + room.ActivePlayer.LastRound.Sum() + "\n");
                             break;
                     }
                 }
@@ -169,11 +164,11 @@ namespace Coursework
 
         private bool Process(ARoom room)
         {
-            int score = new Random(Convert.ToInt32((int)DateTime.Now.Ticks)).Next(1, 6);
+            int score = new Random().Next(1, 6);
             if (score > 1)
             {
                 room.ActivePlayer.AddScore(score);
-                if (room.ActivePlayer.Score >= 100)
+                if (room.ActivePlayer.Score + room.ActivePlayer.LastRound.Sum() >= 100)
                 {
                     return false;
                 }
@@ -181,6 +176,8 @@ namespace Coursework
             else
             {
                 room.ActivePlayer.SumScore(true);
+                Chrono.AppendText("[" + room.Name + "] : Игрок " + room.ActivePlayer.Name + " завершает свой раунд со счетом:  " + room.ActivePlayer.LastRound.Sum() + "\n");
+                room.NextPlayer();
             }
             return true;
         }

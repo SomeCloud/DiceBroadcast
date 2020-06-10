@@ -118,7 +118,7 @@ namespace Coursework
                                 InitWaitingRoomForm((ARoom)frame.Data, PlayerNameInput.Text);
                                 break;
                             case AMessageType.Send:
-                                InitGameRoomForm((ARoom)frame.Data);
+                                InitGameRoomForm((ARoom)frame.Data, PlayerNameInput.Text);
                                 break;
                             case AMessageType.PlayerDisconnect:
                                 break;
@@ -173,7 +173,7 @@ namespace Coursework
                                 InitWaitingRoomForm((ARoom)frame.Data, PlayerNameInput.Text);
                                 break;
                             case AMessageType.Send:
-                                InitGameRoomForm((ARoom)frame.Data);
+                                InitGameRoomForm((ARoom)frame.Data, PlayerNameInput.Text);
                                 break;
                             case AMessageType.PlayerDisconnect:
                                 break;
@@ -198,7 +198,7 @@ namespace Coursework
             Controls.Clear();
             int k = 0;
             AList<Label> PlayersList = new AList<Label>();
-            Label title = new Label { Text = "РЕЗУЛЬТАТЫ АНАЛИЗОВ" , Location = new Point(10,10), Width = 780, Font = new Font(Font.FontFamily, 14)};
+            Label title = new Label { Text = "Игра окончена. Итоги: " , Location = new Point(10,10), Width = 780, Font = new Font(Font.FontFamily, 14)};
             foreach (APlayer player in room.Players.OrderByDescending(u => u.Score).ToList()) 
             {
                 k++;
@@ -206,17 +206,17 @@ namespace Coursework
             }
         }
 
-        private void InitGameRoomForm(ARoom room)
+        private void InitGameRoomForm(ARoom room, string name)
         {
             Controls.Clear();
 
             Text = "Local Client. " + room.Name;
             ClientSize = new Size(800, 600);
-            GameView gameView = new GameView(room) { Parent = this, Location = new Point(10,10), Height = 400};
+            GameView gameView = new GameView(room, name) { Parent = this, Location = new Point(10,10), Height = 400};
             
             gameView.ClickRoll += () => 
             {
-                Server.StartSending(new AFrame(room.Id, room, AMessageType.Send), true, "ClientSender");
+                Server.StartSending(new AFrame(room.Id, new CRoom(room.Id, room.Name, name, room.MaxPlayers), AMessageType.Send), true, "ClientSender");
 
                 Client.Receive += (frame) => {
                     if (InvokeRequired) Invoke(new Action<AFrame>((s) =>
@@ -224,10 +224,39 @@ namespace Coursework
                         switch (frame.MessageType)
                         {
                             case AMessageType.Send:
-                                gameView.Update((ARoom)frame.Data);     
+                                gameView.Update((ARoom)frame.Data, name); 
+                                if (((ARoom)frame.Data).ActivePlayer.Name != name)
+                                {
+                                    Server.StopSending();
+                                }
                                 break;
                             case AMessageType.PlayerDisconnect:
-                                gameView.Update((ARoom)frame.Data);
+                                gameView.Update((ARoom)frame.Data, name);
+                                break;
+                            case AMessageType.GameOver:
+                                InitGameOverForm((ARoom)frame.Data);
+                                break;
+                        }
+                    }
+                ), frame);
+                };
+            };
+
+            gameView.ClickStop += () =>
+            {
+                Server.StartSending(new AFrame(room.Id, new CRoom(room.Id, room.Name, name, room.MaxPlayers), AMessageType.Wait), true, "ClientSender");
+
+                Client.Receive += (frame) => {
+                    if (InvokeRequired) Invoke(new Action<AFrame>((s) =>
+                    {
+                        switch (frame.MessageType)
+                        {
+                            case AMessageType.Send:
+                                Server.StopSending();
+                                gameView.Update((ARoom)frame.Data, name);
+                                break;
+                            case AMessageType.PlayerDisconnect:
+                                gameView.Update((ARoom)frame.Data, name);
                                 break;
                             case AMessageType.GameOver:
                                 InitGameOverForm((ARoom)frame.Data);
