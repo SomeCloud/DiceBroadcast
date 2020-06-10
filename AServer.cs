@@ -29,6 +29,7 @@ namespace Coursework
         // поток для отправки данных в сеть
         private Thread Sender;
         UdpClient sender;
+        public bool InSend = false;
         private bool DoLoop = true;
 
         public AServer(string adress, int port)
@@ -39,14 +40,15 @@ namespace Coursework
         }
 
         // запускаем поток отправки данных в сеть
-        public void StartSending(AFrame frame, bool OneSending)
+        public void StartSending(AFrame frame, bool OneSending, string name)
         {
             DoLoop = !OneSending;
             if ((Sender is null) == false)
             {
                 StopSending();
             }
-            Sender = new Thread(new ParameterizedThreadStart(SendFrame)) { Name = "ServerSender", IsBackground = true };
+            InSend = true;
+            Sender = new Thread(new ParameterizedThreadStart(SendFrame)) { Name = name, IsBackground = true };
             Sender.Start(frame);
         }
 
@@ -58,6 +60,7 @@ namespace Coursework
                 sender.Close();
             }        
             CloseEvent?.Invoke();
+            InSend = false;
             DoLoop = false;
             Sender = null;
         }
@@ -68,7 +71,7 @@ namespace Coursework
         {
             // создаем UdpClient для отправки
             sender = new UdpClient();
-            //sender.Client.SendTimeout = 50;
+            sender.Client.SendTimeout = 50;
             IPEndPoint endPoint = new IPEndPoint(GroupIPAdress, remotePort);
             try
             {

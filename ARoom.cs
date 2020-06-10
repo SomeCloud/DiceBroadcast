@@ -155,6 +155,7 @@ namespace Coursework
 
     }
 
+    [Serializable]
     public class CRoom
     {
         public int Id;

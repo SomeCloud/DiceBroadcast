@@ -22,9 +22,12 @@ namespace Coursework
             Text = "Local Client";
             ClientSize = new Size(800, 600);
 
-            Server = new AServer(adress, sendport);
-            Client = new AClient(adress, receiveport);
+            Server = new AServer(adress, sendport); // 8000
+            Client = new AClient(adress, receiveport); // 8001
             LobbyClient = new AClient(adress, lobbyport);
+
+            Client.StartReceive("ClientReceiver");
+            LobbyClient.StartReceive("LobbyReceiver");
 
             InitLobby();
 
@@ -109,10 +112,51 @@ namespace Coursework
 
             Done.Click += (object sender, EventArgs e) => {
                 CRoom room = new CRoom(0, RoomNameInput.Text, PlayerNameInput.Text, PlayersCountInput.Value);
+                Server.StartSending(new AFrame(room.Id, room, AMessageType.CreateGame), true, "ClientSender");
+                Client.Receive += (frame) => {
+                    if (InvokeRequired) Invoke(new Action<AFrame>((s) =>
+                    {
+                        switch (frame.MessageType)
+                        {
+                            case AMessageType.Connect:
+                                InitWaitingRoomForm((ARoom)frame.Data, PlayerNameInput.Text);
+                                break;
+                            case AMessageType.Send:
+                                break;
+                            case AMessageType.PlayerDisconnect:
+                                break;
+                            case AMessageType.GameOver:
+                                break;
+                        }
+                    }
+                ), frame);
+                };
             };
 
             Back.Click += (object sender, EventArgs e) => {
-                BackToLobbyEvent?.Invoke();
+                InitLobby();
+            };
+
+        }
+
+        private void InitWaitingRoomForm(ARoom room, string player)
+        {
+            Controls.Clear();
+
+            Text = "Local Client. Waiting Room...";
+            ClientSize = new Size(800, 600); 
+
+            Label RoomTitle = new Label() { Parent = this, Location = new Point(ClientSize.Width / 2 - 250, ClientSize.Height / 2 - 195), Size = new Size(500, 40), Font = new Font(Font.FontFamily, 24), Text = room.Name };
+
+            Label PlyersCount = new Label() { Parent = this, Location = new Point(ClientSize.Width / 2 - 250, ClientSize.Height / 2 - 125), Size = new Size(500, 40), Font = new Font(Font.FontFamily, 12), Text = "Игроки: " + room.Players.Count + "/" + room.MaxPlayers };
+            Label PlayerName = new Label() { Parent = this, Location = new Point(ClientSize.Width / 2 - 250, ClientSize.Height / 2 - 85), Size = new Size(500, 40), Font = new Font(Font.FontFamily, 12), Text = "Ваш ник: " + player };
+            Label GameStatus = new Label() { Parent = this, Location = new Point(ClientSize.Width / 2 - 250, ClientSize.Height / 2 - 45), Size = new Size(500, 40), Font = new Font(Font.FontFamily, 12), Text = "Ожидаем подключения игроков" };
+
+            Button Back = new Button() { Parent = this, Location = new Point(ClientSize.Width / 2 - 250, ClientSize.Height / 2 + 155), Size = new Size(500, 40), Font = new Font(Font.FontFamily, 12), Text = "Вернуться в лобби" };
+
+            Back.Click += (object sender, EventArgs e) => {
+                Server.StartSending(new AFrame(room.Id, new CRoom(room.Id, room.Name, player, room.MaxPlayers), AMessageType.PlayerDisconnect), true, "ClientSender");
+                InitLobby();
             };
 
         }
