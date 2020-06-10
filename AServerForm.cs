@@ -39,6 +39,7 @@ namespace Coursework
             //ComboBox Lobbys = new ComboBox() { Parent = this, Location = new Point(10, 10), Size = new Size(500, 30), Text = "Не выбрано" };
             RichTextBox Chrono = new RichTextBox() { Parent = this, Location = new Point(10, 10), Size = new Size(500, 580) };
 
+            var t = 0;
 
             RoomListChangeEvent += () => {
                 LobbyThread = new Thread(new ParameterizedThreadStart((object obj) => {
