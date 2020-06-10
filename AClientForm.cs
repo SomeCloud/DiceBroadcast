@@ -85,6 +85,55 @@ namespace Coursework
                 InitCreateRoomForm();
             };
 
+            Lobbys.ConnectEvent += (note, room) => {            
+                InitInputYourNameForm(room);
+            };
+
+        }
+
+        private void InitInputYourNameForm(ARoom room)
+        {
+            Controls.Clear();
+
+            Text = "Local Client. Connect to " + room.Name;
+            ClientSize = new Size(800, 600);
+
+            Label RoomTitle = new Label() { Parent = this, Location = new Point(ClientSize.Width / 2 - 250, ClientSize.Height / 2 - 195), Size = new Size(500, 40), Font = new Font(Font.FontFamily, 24), Text = "Настройки создания комнаты" };
+
+            Label PlayerNameInputLabel = new Label() { Parent = this, Location = new Point(ClientSize.Width / 2 - 250, ClientSize.Height / 2 + 55), Size = new Size(500, 40), Font = new Font(Font.FontFamily, 12), Text = "Введетие ваш ник" };
+            TextBox PlayerNameInput = new TextBox() { Parent = this, Location = new Point(ClientSize.Width / 2 - 250, ClientSize.Height / 2 + 105), Size = new Size(500, 40), Font = new Font(Font.FontFamily, 12) };
+
+            Button Done = new Button() { Parent = this, Location = new Point(ClientSize.Width / 2 - 250, ClientSize.Height / 2 + 155), Size = new Size(200, 40), Font = new Font(Font.FontFamily, 12), Text = "Готово" };
+            Button Back = new Button() { Parent = this, Location = new Point(ClientSize.Width / 2 + 50, ClientSize.Height / 2 + 155), Size = new Size(200, 40), Font = new Font(Font.FontFamily, 12), Text = "Вернуться в лобби" };
+            
+
+            Done.Click += (object sender, EventArgs e) => {
+                CRoom room = new CRoom(0, RoomNameInput.Text, PlayerNameInput.Text, PlayersCountInput.Value);
+                Server.StartSending(new AFrame(room.Id, room, AMessageType.Connect), true, "ClientSender");
+                Client.Receive += (frame) => {
+                    if (InvokeRequired) Invoke(new Action<AFrame>((s) =>
+                    {
+                        switch (frame.MessageType)
+                        {
+                            case AMessageType.Connect:
+                                InitWaitingRoomForm((ARoom)frame.Data, PlayerNameInput.Text);
+                                break;
+                            case AMessageType.Send:
+                                break;
+                            case AMessageType.PlayerDisconnect:
+                                break;
+                            case AMessageType.GameOver:
+                                break;
+                        }
+                    }
+                ), frame);
+                };
+            };
+
+            Back.Click += (object sender, EventArgs e) => {
+                InitLobby();
+            };
+
         }
 
         private void InitCreateRoomForm()

@@ -11,7 +11,7 @@ namespace Coursework
     class NotesView: Panel
     {
         //  Событие при получении данных от сервера
-        public delegate void OnConnectEvent(GameNoteView NoteView, ARoom note);
+        public delegate void OnConnectEvent(GameNoteView NoteView, ARoom room);
         public event OnConnectEvent ConnectEvent;
 
         AList<GameNoteView> Rows;
