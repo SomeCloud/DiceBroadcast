@@ -134,12 +134,13 @@ namespace Coursework
                                 if (Process(room) == true)
                                 {
                                     Server.StartSending(new AFrame(room.Id, room, AMessageType.Send), true, "ServerSender");
-                                    Chrono.AppendText("[" + room.Name + "] : Игрок " + croom.PlayerName + " сделал ход (" + room.ActivePlayer.LastRound.Last() + ")\n");
+                                    //Chrono.AppendText("[" + room.Name + "] : Игрок " + croom.PlayerName + " сделал ход (" + room.ActivePlayer.LastRound.LastOrDefault() + ")\n");
                                 }
                                 else
                                 {
                                     Server.StartSending(new AFrame(room.Id, room, AMessageType.GameOver), true, "ServerSender");
                                     Chrono.AppendText("[" + room.Name + "] : Игрок " + croom.PlayerName + " победил в игре со счетом " + room.ActivePlayer.Score + "\n");
+                                    Chrono.AppendText("[System] : комната " + room.Name + " расформирована\n");
                                     Rooms.Remove(room);
                                     RoomListChangeEvent?.Invoke();
                                 }
@@ -149,10 +150,11 @@ namespace Coursework
                             croom = (CRoom)frame.Data;
                             if (FindRoomByName(croom.RoomName, out room) == true)
                             {
+                                room.ActivePlayer.EndRound(false);
+                                Chrono.AppendText("[" + room.Name + "] : Игрок " + croom.PlayerName + " завершает свой раунд со счетом:  " + room.ActivePlayer.LastRound.Sum() + "\n");
                                 room.NextPlayer();
                             }
                             Server.StartSending(new AFrame(room.Id, room, AMessageType.Send), true, "ServerSender");
-                            Chrono.AppendText("[" + room.Name + "] : Игрок " + croom.PlayerName + " завершает свой раунд со счетом:  " + room.ActivePlayer.LastRound.Sum() + "\n");
                             break;
                     }
                 }
@@ -164,19 +166,24 @@ namespace Coursework
 
         private bool Process(ARoom room)
         {
-            int score = new Random().Next(1, 6);
+            int score = new Random().Next(1, 36);
             if (score > 1)
             {
                 room.ActivePlayer.AddScore(score);
+                Chrono.AppendText("[" + room.Name + "] : Игрок " + room.ActivePlayer.Name + " сделал ход (" + room.ActivePlayer.LastRound.LastOrDefault() + ")\n");
+                Chrono.AppendText("[" + room.Name + "] : Игрок " + room.ActivePlayer.Name + " завершает свой раунд со счетом:  " + room.ActivePlayer.LastRound.Sum() + "\n");
                 if (room.ActivePlayer.Score + room.ActivePlayer.LastRound.Sum() >= 100)
                 {
+                    room.ActivePlayer.EndRound(false);
                     return false;
                 }
             }
             else
             {
-                room.ActivePlayer.SumScore(true);
-                Chrono.AppendText("[" + room.Name + "] : Игрок " + room.ActivePlayer.Name + " завершает свой раунд со счетом:  " + room.ActivePlayer.LastRound.Sum() + "\n");
+
+                Chrono.AppendText("[" + room.Name + "] : Игрок " + room.ActivePlayer.Name + " сделал ход (" + room.ActivePlayer.LastRound.LastOrDefault() + ")\n");
+                //Chrono.AppendText("[" + room.Name + "] : Игрок " + room.ActivePlayer.Name + " завершает свой раунд со счетом:  " + room.ActivePlayer.LastRound.Sum() + "\n");
+                room.ActivePlayer.EndRound(true);     
                 room.NextPlayer();
             }
             return true;

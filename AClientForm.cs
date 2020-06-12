@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Reflection;
+using System.Threading;
 
 namespace Coursework
 {
@@ -16,6 +17,7 @@ namespace Coursework
         public AClient Client;
 
         public AClient LobbyClient;
+        private Thread GameReceiver;
 
         public AClientForm(string adress, int sendport, int receiveport, int lobbyport) : base()
         {
@@ -53,7 +55,7 @@ namespace Coursework
                 if (InvokeRequired) Invoke(new Action<AFrame>((s) =>
                 {
                     AList<ARoom> rooms = (AList<ARoom>)frame.Data;
-                    if (Notes.Count > 0)
+                    if (Notes.Count > 0 && rooms.Count > 0)
                     {
                         foreach (ARoom room in rooms)
                         {
@@ -191,19 +193,32 @@ namespace Coursework
 
         }
 
-        private void InitGameOverForm(ARoom room) 
+        private void InitGameOverForm(ARoom room, string name) 
         {
             Text = "Local Client. " + room.Name + " - GAME OVER";
             ClientSize = new Size(800, 600);
             Controls.Clear();
+
             int k = 0;
+            List<APlayer> players = room.Players.OrderByDescending(u => u.Score).ToList();
+
             AList<Label> PlayersList = new AList<Label>();
-            Label title = new Label { Text = "Игра окончена. Итоги: " , Location = new Point(10,10), Width = 780, Font = new Font(Font.FontFamily, 14)};
-            foreach (APlayer player in room.Players.OrderByDescending(u => u.Score).ToList()) 
+
+            Label title = new Label { Parent = this, Location = new Point(10, 10), Width = 780, Text = "Игра окончена. Итоги: ", Font = new Font(Font.FontFamily, 14)};
+
+            foreach (APlayer player in players) 
             {
                 k++;
-                PlayersList.Add(new Label { Text = player.Name + ": " + player.Score, Location = new Point(10, k * 40), Width = 780 });
+                PlayersList.Add(new Label { Parent = this, Location = new Point(10, 60 + k * 40), Width = 780, Text = player.Name + ": " + player.Score, Font = new Font(Font.FontFamily, 14) });
             }
+
+            Button BackToLobby = new Button() { Parent = this, Location = new Point(ClientRectangle.Width / 2 - 150, PlayersList.Last().Location.Y + 60), Size = new Size(300, 40 ), Text = "Вернуться в лобби", Font = new Font(Font.FontFamily, 14) };
+
+            BackToLobby.Click += (object sender, EventArgs e) => {
+                Server.StartSending(new AFrame(room.Id, new CRoom(room.Id, room.Name, name, room.MaxPlayers), AMessageType.PlayerDisconnect), true, "ClientSender");
+                InitLobby();
+            };
+
         }
 
         private void InitGameRoomForm(ARoom room, string name)
@@ -216,58 +231,36 @@ namespace Coursework
             
             gameView.ClickRoll += () => 
             {
-                Server.StartSending(new AFrame(room.Id, new CRoom(room.Id, room.Name, name, room.MaxPlayers), AMessageType.Send), true, "ClientSender");
-
-                Client.Receive += (frame) => {
-                    if (InvokeRequired) Invoke(new Action<AFrame>((s) =>
-                    {
-                        switch (frame.MessageType)
-                        {
-                            case AMessageType.Send:
-                                gameView.Update((ARoom)frame.Data, name); 
-                                if (((ARoom)frame.Data).ActivePlayer.Name != name)
-                                {
-                                    Server.StopSending();
-                                }
-                                break;
-                            case AMessageType.PlayerDisconnect:
-                                gameView.Update((ARoom)frame.Data, name);
-                                break;
-                            case AMessageType.GameOver:
-                                InitGameOverForm((ARoom)frame.Data);
-                                break;
-                        }
-                    }
-                ), frame);
-                };
+                Server.StartSending(new AFrame(room.Id, new CRoom(room.Id, room.Name, name, room.MaxPlayers), AMessageType.Send), true, "ClientSender");              
             };
 
             gameView.ClickStop += () =>
             {
                 Server.StartSending(new AFrame(room.Id, new CRoom(room.Id, room.Name, name, room.MaxPlayers), AMessageType.Wait), true, "ClientSender");
+            };
 
+            GameReceiver = new Thread(new ParameterizedThreadStart((object obj) => {
                 Client.Receive += (frame) => {
                     if (InvokeRequired) Invoke(new Action<AFrame>((s) =>
                     {
                         switch (frame.MessageType)
                         {
                             case AMessageType.Send:
-                                Server.StopSending();
                                 gameView.Update((ARoom)frame.Data, name);
                                 break;
                             case AMessageType.PlayerDisconnect:
                                 gameView.Update((ARoom)frame.Data, name);
                                 break;
                             case AMessageType.GameOver:
-                                InitGameOverForm((ARoom)frame.Data);
+                                InitGameOverForm((ARoom)frame.Data, name);
                                 break;
                         }
                     }
                 ), frame);
                 };
-            };
-
-
+            }))
+            { Name = "GameReceiver", IsBackground = true };
+            GameReceiver.Start();           
         }
 
         private void InitWaitingRoomForm(ARoom room, string player)

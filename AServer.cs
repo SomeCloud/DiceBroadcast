@@ -58,11 +58,11 @@ namespace Coursework
             if ((sender is null) == false)
             {
                 sender.Close();
-            }        
-            CloseEvent?.Invoke();
+            }
+            Sender = null;
             InSend = false;
             DoLoop = false;
-            Sender = null;
+            //CloseEvent?.Invoke();
         }
 
         // главная функция для отправки данных в общую сеть

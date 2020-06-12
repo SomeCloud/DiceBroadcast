@@ -29,19 +29,16 @@ namespace Coursework
             IsTurned = false;
         }
 
-        public void SumScore(bool isOne)
+        public void EndRound(bool isOne)
         {
-            int temp = 0;
             if (isOne == false)
             {
-                foreach (int e in LastRound)
-                {
-                    temp += e;
-                }
-                Rounds.Add(temp);
+                Rounds.Add(LastRound.Sum());
+                LastRound.Clear();
             }
             else
             {
+                LastRound.Clear();
                 Rounds.Add(0);
             }
         }
@@ -53,9 +50,7 @@ namespace Coursework
 
         public int Score {
             get {
-                int score = 0;
-                foreach (int round in Rounds) score += round;
-                return score;
+                return Rounds.Sum();
             }
         }
 
