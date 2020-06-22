@@ -107,7 +107,7 @@ namespace Coursework
             Button Done = new Button() { Parent = this, Location = new Point(ClientSize.Width / 2 - 250, ClientSize.Height / 2 + 155), Size = new Size(200, 40), Font = new Font(Font.FontFamily, 12), Text = "Готово" };
             Button Back = new Button() { Parent = this, Location = new Point(ClientSize.Width / 2 + 50, ClientSize.Height / 2 + 155), Size = new Size(200, 40), Font = new Font(Font.FontFamily, 12), Text = "Вернуться в лобби" };
             
-
+            
             Done.Click += (object sender, EventArgs e) => {
                 CRoom room = new CRoom(0, Room.Name, PlayerNameInput.Text, Room.MaxPlayers);
                 Server.StartSending(new AFrame(room.Id, room, AMessageType.Connect), true, "ClientSender");

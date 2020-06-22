@@ -166,7 +166,7 @@ namespace Coursework
 
         private bool Process(ARoom room)
         {
-            int score = new Random().Next(1, 36);
+            int score = new Random().Next(1, 7);
             if (score > 1)
             {
                 room.ActivePlayer.AddScore(score);
